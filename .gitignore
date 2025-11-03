@@ -1,0 +1,73 @@
+# Node
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Runtime files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+pids/
+*.pid
+*.pid.lock
+
+# Coverage
+coverage/
+
+# Optional npm cache
+.npm/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor directories and files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Mac Thumbnails
+Icon\r
+
+# Misc
+*.tgz
+*.zip
+
+# Yarn v2+ cache
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# JetBrains
+*.iml
+
+# VS Code settings and history (optional)
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+
+# local environment overrides
+.env.test
+.env.production
+
+# lockfile (optional - keep if you want deterministic installs)
+# package-lock.json
+# pnpm-lock.yaml
+# yarn.lock
