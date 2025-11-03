@@ -22,9 +22,8 @@ if (missingVars.length > 0) {
   console.error('❌ Missing required environment variables:');
   console.error(`   ${missingVars.join(', ')}`);
   console.error('Create a .env file with these variables set.');
-  process.exit(1);
   process.exitCode = 1;
-  return;
+  process.exit(1);
 }
 
 const { DISCORD_TOKEN, CLIENT_ID, GUILD_ID } = process.env;
