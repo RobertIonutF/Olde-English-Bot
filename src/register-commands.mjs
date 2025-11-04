@@ -11,7 +11,6 @@ import {
 const requiredEnvVars = {
   DISCORD_TOKEN: process.env.DISCORD_TOKEN,
   CLIENT_ID: process.env.CLIENT_ID,
-  GUILD_ID: process.env.GUILD_ID,
 };
 
 const missingVars = Object.entries(requiredEnvVars)
@@ -36,10 +35,17 @@ if (!snowflakePattern.test(CLIENT_ID)) {
   process.exit(1);
 }
 
-if (!snowflakePattern.test(GUILD_ID)) {
+if (GUILD_ID && !snowflakePattern.test(GUILD_ID)) {
   console.error('❌ GUILD_ID is not a valid Discord ID (must be 17-20 digits).');
   process.exit(1);
 }
+
+// Generate invite URL with proper scopes
+const PERMISSIONS = '274877908992'; // Send Messages, Use Slash Commands, Read Messages
+const INVITE_URL = `https://discord.com/api/oauth2/authorize?client_id=${CLIENT_ID}&permissions=${PERMISSIONS}&scope=bot%20applications.commands`;
+
+console.log('\n🔗 Bot Invite URL (use this to add bot to your server):');
+console.log(`   ${INVITE_URL}\n`);
 
 const commands = [
   new SlashCommandBuilder().setName('ping').setDescription('Replies with Pong!'),
@@ -91,27 +97,48 @@ async function registerCommands() {
   try {
     console.log('📝 Starting command registration…');
     console.log(`   • Application ID: ${CLIENT_ID}`);
-    console.log(`   • Guild ID: ${GUILD_ID}`);
 
-    await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), {
-      body: commands,
-    });
+    if (GUILD_ID) {
+      // Register guild-specific commands (instant updates, good for testing)
+      console.log(`   • Guild ID: ${GUILD_ID}`);
+      console.log(`   • Registering to specific guild (instant updates)…`);
 
-    console.log('✅ Commands registered successfully!');
-    console.log('   Commands should be available immediately in the guild.');
+      await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), {
+        body: commands,
+      });
+
+      console.log('✅ Guild commands registered successfully!');
+      console.log('   Commands are now available in your guild.');
+    } else {
+      // Register global commands (takes up to 1 hour to propagate)
+      console.log('   • No GUILD_ID set, registering globally…');
+      console.log('   ⚠️  Global commands can take up to 1 hour to appear!');
+
+      await rest.put(Routes.applicationCommands(CLIENT_ID), {
+        body: commands,
+      });
+
+      console.log('✅ Global commands registered successfully!');
+      console.log('   Commands will be available in all servers within ~1 hour.');
+    }
   } catch (error) {
     if (error?.code === 50001 || error?.rawError?.code === 50001) {
-      console.error('❌ Missing Access (code 50001). Common causes:');
-      console.error('   1. The bot is not a member of the guild specified by GUILD_ID.');
-      console.error("   2. CLIENT_ID doesn't match the application for the provided bot token.");
-      console.error('   3. GUILD_ID points to a server where the bot lacks access.');
-      console.error('   4. The bot was invited without the "applications.commands" scope.');
-      if (process.env.DISCORD_BOT_INVITE) {
-        console.error('   Re-invite the bot using:');
-        console.error(`     ${process.env.DISCORD_BOT_INVITE}`);
-      }
+      console.error('\n❌ Missing Access (code 50001)');
+      console.error('   This means the bot cannot access the specified guild.');
+      console.error('\n📋 Troubleshooting steps:');
+      console.error('   1. Make sure the bot is invited to your server');
+      console.error('   2. Use the invite URL printed above (must include applications.commands scope)');
+      console.error('   3. Verify CLIENT_ID matches your bot application');
+      console.error('   4. Verify GUILD_ID is the correct server ID');
+      console.error('\n💡 Alternative: Remove GUILD_ID from .env to register globally');
+      console.error('   (Global commands work everywhere but take ~1 hour to update)');
+    } else if (error?.code === 401 || error?.status === 401) {
+      console.error('\n❌ Invalid Bot Token (401 Unauthorized)');
+      console.error('   Check that DISCORD_TOKEN in .env is correct');
     } else {
-      console.error('❌ Failed to register commands:', error);
+      console.error('\n❌ Failed to register commands:', error);
+      if (error?.message) console.error(`   Error: ${error.message}`);
+      if (error?.code) console.error(`   Code: ${error.code}`);
     }
     process.exitCode = 1;
   }
